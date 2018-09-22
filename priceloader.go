@@ -45,7 +45,7 @@ func (price *Price) PriceList(supplierCode string) {
 	price.CategoryStack = make([]*Category, 8)
 }
 
-func (price *Price) SetCurrentCategory(name string, level int) *Category {
+func (price *Price) SetCurrentCategory(name string, url string, level int) *Category {
 	if level < 0 {
 		level = 0
 	}
@@ -60,7 +60,7 @@ func (price *Price) SetCurrentCategory(name string, level int) *Category {
 			pCurCategory = price.CategoryStack[level-1]
 		}
 
-		category := Category{Id: 0, Name: name, URL: ""}
+		category := Category{Id: 0, Name: name, URL: url}
 		category.Categories = make(map[string]*Category)
 		category.Items = make(map[int]*Item)
 		pCurrentCategory := &category
