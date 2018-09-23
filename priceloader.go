@@ -12,9 +12,9 @@ type Item struct {
 	Code        string
 	Model       string
 	Brand       string
-	Price       float64
-	PriceRur    float64
-	PriceUsd    float64
+	Price       int64
+	PriceRur    int64
+	PriceUsd    int64
 	Store       string
 	StoreNsk    string
 	StoreMsk    string
@@ -28,12 +28,21 @@ type Category struct {
 	Items      map[int]*Item
 }
 
+func (pCat *Category) AddItem(pItem *Item) {
+	pCat.Items[len(pCat.Items)+1] = pItem
+}
+
 type Price struct {
 	SupplierId    int32
 	supplierCode  string
 	Categories    map[string]*Category
 	CategoryStack []*Category
 	curLevel      int
+}
+
+type LoadTask struct {
+	Pointer *Category
+	Message string
 }
 
 var PriceList = new(Price)
@@ -80,4 +89,8 @@ func (price *Price) createAndAddCategory(name string) *Category {
 	price.CategoryStack[0] = pCategory
 	price.Categories[name] = pCategory
 	return pCategory
+}
+
+func (price *Price) AddItem(pCategory *Category, pItem *Item) {
+	pCategory.AddItem(pItem)
 }
