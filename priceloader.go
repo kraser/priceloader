@@ -42,6 +42,7 @@ type Price struct {
 
 type LoadTask struct {
 	Pointer *Category
+	Handler func()
 	Message string
 }
 
