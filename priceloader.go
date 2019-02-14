@@ -1,8 +1,12 @@
 // priceloader project priceloader.go
 package priceloader
 
-//"fmt"
-//"logger"
+import (
+	//"fmt"
+	"crypto/md5"
+	"encoding/hex"
+	log "logger"
+)
 
 type Item struct {
 	Id          int32
@@ -18,6 +22,7 @@ type Item struct {
 	Store       string
 	StoreNsk    string
 	StoreMsk    string
+	URL         string
 }
 
 type Category struct {
@@ -33,16 +38,17 @@ func (pCat *Category) AddItem(pItem *Item) {
 }
 
 type Price struct {
-	SupplierId    int32
-	supplierCode  string
-	Categories    map[string]*Category
-	CategoryStack []*Category
-	curLevel      int
+	SupplierId      int32
+	supplierCode    string
+	Categories      map[string]*Category
+	CategoryStack   []*Category
+	ItemsCategories map[string]*Category
+	curLevel        int
 }
 
 type LoadTask struct {
 	Pointer *Category
-	Handler func()
+	Handler func(*Category)
 	Message string
 }
 
@@ -53,6 +59,8 @@ func (price *Price) PriceList(supplierCode string) {
 	price.supplierCode = supplierCode
 	price.Categories = make(map[string]*Category)
 	price.CategoryStack = make([]*Category, 8)
+	price.ItemsCategories = make(map[string]*Category)
+
 }
 
 func (price *Price) SetCurrentCategory(name string, url string, level int) *Category {
@@ -61,7 +69,7 @@ func (price *Price) SetCurrentCategory(name string, url string, level int) *Cate
 	}
 
 	if level == 0 {
-		pCurrentCategory = price.createAndAddCategory(name)
+		pCurrentCategory = price.createAndAddCategory(name, url)
 	} else {
 		var pCurCategory *Category
 		if level > price.curLevel {
@@ -73,17 +81,18 @@ func (price *Price) SetCurrentCategory(name string, url string, level int) *Cate
 		category := Category{Id: 0, Name: name, URL: url}
 		category.Categories = make(map[string]*Category)
 		category.Items = make(map[int]*Item)
-		pCurrentCategory := &category
+		pCurrentCategory = &category
 		pCurCategory.Categories[name] = pCurrentCategory
 		PriceList.CategoryStack[level] = pCurrentCategory
 
 	}
 	price.curLevel = level
+	log.Debug("CREATED:", pCurrentCategory.Name, pCurrentCategory.URL)
 	return pCurrentCategory
 }
 
-func (price *Price) createAndAddCategory(name string) *Category {
-	category := Category{Id: 0, Name: name, URL: ""}
+func (price *Price) createAndAddCategory(name string, url string) *Category {
+	category := Category{Id: 0, Name: name, URL: url}
 	category.Categories = make(map[string]*Category)
 	category.Items = make(map[int]*Item)
 	pCategory := &category
@@ -94,4 +103,20 @@ func (price *Price) createAndAddCategory(name string) *Category {
 
 func (price *Price) AddItem(pCategory *Category, pItem *Item) {
 	pCategory.AddItem(pItem)
+}
+
+func (price *Price) AddItemsCategory(pCategory *Category) {
+	hash := getMd5Hash(pCategory.Name)
+	PriceList.ItemsCategories[hash] = pCategory
+}
+
+func (price *Price) DeleteItemsCategory(pCategory *Category) {
+	hash := getMd5Hash(pCategory.Name)
+	delete(PriceList.ItemsCategories, hash)
+}
+
+func getMd5Hash(encode string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(encode))
+	return hex.EncodeToString(hasher.Sum(nil))
 }
